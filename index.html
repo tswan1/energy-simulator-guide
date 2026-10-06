@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sustainable Energy Guide</title>
+
+    <link rel="stylesheet" href="./styles.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+    <!-- Navigation -->
+    <header>
+        <nav class="navbar">
+            <div class="logo">🌱 Sustainable Energy</div>
+
+            <div class="nav-links">
+                <button data-section="home">Home</button>
+                <button data-section="calculator">Calculator</button>
+                <button data-section="solar">Solar</button>
+                <button data-section="guide">Guide</button>
+                <button data-section="dashboard">Dashboard</button>
+            </div>
+        </nav>
+    </header>
+
+
+    <main>
+
+        <!-- ================= HOME ================= -->
+        <section id="home" class="section active">
+
+            <div class="hero">
+                <h1>Sustainable Energy Guide</h1>
+
+                <p>
+                    Understand your energy consumption,
+                    estimate your costs, and explore solar energy.
+                </p>
+
+                <button class="primary-btn" data-section="calculator">
+                    Start Simulation
+                </button>
+            </div>
+
+            <div class="feature-grid">
+
+                <div class="feature-card">
+                    <h2>⚡ Energy Calculator</h2>
+                    <p>
+                        Calculate appliance-wise energy consumption
+                        and estimated cost.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h2>☀️ Solar Simulator</h2>
+                    <p>
+                        Estimate solar generation, savings,
+                        and payback using Indian regional data.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h2>🌱 Energy Guide</h2>
+                    <p>
+                        Get recommendations based on your
+                        calculated energy usage.
+                    </p>
+                </div>
+
+                <div class="feature-card">
+                    <h2>📊 Dashboard</h2>
+                    <p>
+                        Visualize your energy usage,
+                        costs, and savings.
+                    </p>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= CALCULATOR ================= -->
+        <section id="calculator" class="section">
+
+            <h1>Energy Calculator</h1>
+
+            <p>
+                Add your household appliances to estimate
+                energy consumption and electricity cost.
+            </p>
+
+            <div id="appliance-list"></div>
+
+            <button id="add-appliance" class="secondary-btn">
+                + Add Appliance
+            </button>
+
+            <div class="calculator-results">
+
+                <h2>Results</h2>
+
+                <div class="result-grid">
+
+                    <div class="result-card">
+                        <span>Daily Energy</span>
+                        <strong id="daily-energy">0 kWh</strong>
+                    </div>
+
+                    <div class="result-card">
+                        <span>Monthly Energy</span>
+                        <strong id="monthly-energy">0 kWh</strong>
+                    </div>
+
+                    <div class="result-card">
+                        <span>Yearly Energy</span>
+                        <strong id="yearly-energy">0 kWh</strong>
+                    </div>
+
+                </div>
+
+                <div class="input-group rate-group">
+
+                    <label for="electricity-rate">
+                        Electricity Rate
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            id="electricity-rate"
+                            min="0"
+                            max="1000"
+                            step="0.01"
+                            placeholder="8"
+                        >
+
+                        <span>₹/kWh</span>
+
+                    </div>
+
+                    <small>
+                        Allowed range: ₹0–₹1,000 per kWh
+                    </small>
+
+                </div>
+
+                <div class="result-card">
+                    <span>Estimated Monthly Cost</span>
+                    <strong id="monthly-cost">₹0</strong>
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= SOLAR ================= -->
+        <section id="solar" class="section">
+
+            <h1>Solar Simulator</h1>
+
+            <p>
+                Estimate solar generation, savings, and payback
+                using region-based Indian solar resource estimates.
+            </p>
+
+            <div class="solar-notice">
+
+                <strong>India-specific estimate</strong>
+
+                <p>
+                    Select your state or Union Territory to use
+                    a regional solar-resource estimate.
+                    Actual rooftop generation varies with location,
+                    weather, orientation, shading, and system losses.
+                </p>
+
+            </div>
+
+
+            <div class="form-grid">
+
+                <!-- State selector is added here by calculator.js -->
+
+
+                <div class="input-group">
+
+                    <label for="solar-consumption">
+                        Monthly Consumption
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            id="solar-consumption"
+                            min="0"
+                            max="100000"
+                            step="0.01"
+                            placeholder="e.g. 250"
+                        >
+
+                        <span>kWh/month</span>
+
+                    </div>
+
+                    <small>
+                        Allowed range: 0–100,000 kWh/month
+                    </small>
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="sun-hours">
+                        Estimated Peak Sun Hours
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            id="sun-hours"
+                            min="0.1"
+                            max="12"
+                            step="0.01"
+                            readonly
+                        >
+
+                        <span>hours/day</span>
+
+                    </div>
+
+                    <small>
+                        Automatically estimated from selected
+                        Indian state/UT.
+                    </small>
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="system-efficiency">
+                        System Efficiency
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            id="system-efficiency"
+                            min="1"
+                            max="100"
+                            step="1"
+                            value="80"
+                        >
+
+                        <span>%</span>
+
+                    </div>
+
+                    <small>
+                        Simulator assumption: 80%
+                    </small>
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="solar-capacity">
+                        Solar Capacity
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            id="solar-capacity"
+                            min="0.1"
+                            max="1000"
+                            step="0.1"
+                            placeholder="e.g. 3"
+                        >
+
+                        <span>kW</span>
+
+                    </div>
+
+                    <small>
+                        Allowed range: 0.1–1,000 kW
+                    </small>
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="system-cost">
+                        Solar System Cost
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            id="system-cost"
+                            min="0"
+                            max="100000000"
+                            step="100"
+                            placeholder="e.g. 180000"
+                        >
+
+                        <span>₹</span>
+
+                    </div>
+
+                    <small>
+                        Allowed range: ₹0–₹10 crore
+                    </small>
+
+                </div>
+
+
+                <div class="input-group">
+
+                    <label for="solar-electricity-rate">
+                        Electricity Rate
+                    </label>
+
+                    <div class="input-with-unit">
+
+                        <input
+                            type="number"
+                            id="solar-electricity-rate"
+                            min="0"
+                            max="1000"
+                            step="0.01"
+                            placeholder="e.g. 8"
+                        >
+
+                        <span>₹/kWh</span>
+
+                    </div>
+
+                    <small>
+                        Allowed range: ₹0–₹1,000 per kWh
+                    </small>
+
+                </div>
+
+            </div>
+
+
+            <button id="calculate-solar" class="primary-btn">
+                Calculate Solar
+            </button>
+
+
+            <div id="solar-results" class="calculator-results">
+
+                <h2>Estimated Results</h2>
+
+                <div class="result-grid">
+
+                    <div class="result-card">
+                        <span>Daily Generation</span>
+                        <strong id="solar-daily">0 kWh</strong>
+                    </div>
+
+                    <div class="result-card">
+                        <span>Monthly Generation</span>
+                        <strong id="solar-monthly">0 kWh</strong>
+                    </div>
+
+                    <div class="result-card">
+                        <span>Annual Generation</span>
+                        <strong id="solar-yearly">0 kWh</strong>
+                    </div>
+
+                    <div class="result-card">
+                        <span>Annual Savings</span>
+                        <strong id="annual-savings">₹0</strong>
+                    </div>
+
+                    <div class="result-card">
+                        <span>Payback Period</span>
+                        <strong id="payback-period">
+                            Not calculated
+                        </strong>
+                    </div>
+
+                </div>
+
+                <div class="estimate-note">
+
+                    <strong>Important:</strong>
+
+                    <p>
+                        These are educational estimates, not
+                        engineering or installation advice.
+                        Actual solar performance depends on
+                        site-specific conditions.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= GUIDE ================= -->
+        <section id="guide" class="section">
+
+            <h1>Energy Guide</h1>
+
+            <p>
+                Recommendations based on your calculated
+                energy consumption.
+            </p>
+
+            <div id="recommendations">
+
+                <p>
+                    Add appliances in the Energy Calculator
+                    to receive recommendations.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= DASHBOARD ================= -->
+        <section id="dashboard" class="section">
+
+            <h1>Energy Dashboard</h1>
+
+            <p>
+                View your calculated consumption, estimated costs,
+                solar performance, savings, and estimated CO₂ reduction.
+            </p>
+
+            <div id="dashboard-summary"></div>
+
+            <div class="chart-container">
+                <canvas id="appliance-chart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="consumption-chart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="savings-chart"></canvas>
+            </div>
+
+        </section>
+    </main>
+
+
+    <!-- JavaScript -->
+    <script src="js/calculator.js"></script>
+    <script src="js/solar.js"></script>
+    <script src="js/guide.js"></script>
+    <script src="js/dashboard.js"></script>
+
+</body>
+</html>
