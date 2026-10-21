@@ -550,6 +550,42 @@ button:disabled {
     color: #8a6500;
 }
 
+.solar-coverage-control {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.solar-coverage-control input[type="range"] {
+    flex: 1;
+    min-width: 0;
+    width: calc(100% + 16px);
+    margin-left: -8px;
+    margin-right: -8px;
+    accent-color: #d8b52b;
+}
+
+.solar-coverage-control strong {
+    min-width: 48px;
+    color: #8a6500;
+    text-align: right;
+}
+
+.solar-cost-breakdown {
+    margin: 8px 0 0;
+    padding: 10px;
+    border-left: 3px solid #d8b52b;
+    background: #fffbea;
+    color: #514719;
+    font-size: 13px;
+}
+
+#system-cost[readonly] {
+    background: #f3f5f3;
+    color: #444;
+    cursor: not-allowed;
+}
+
 .solar-notice p {
     margin: 5px 0 0;
 

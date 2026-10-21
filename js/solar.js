@@ -30,6 +30,11 @@ const SOLAR_CONFIG = {
     MIN_COST: 0,
     MAX_COST: 100000000,
 
+    // Indicative residential grid-connected rooftop prices in India.
+    // Actual vendor quotes vary by location, equipment and roof conditions.
+    ESTIMATED_COST_MIN_PER_KW: 55000,
+    ESTIMATED_COST_MAX_PER_KW: 72000,
+
     MIN_RATE: 0,
     MAX_RATE: 1000,
 
@@ -77,6 +82,92 @@ function solarSetText(id, value) {
 
     if (element) {
         element.textContent = value;
+    }
+}
+
+
+/* =========================================================
+   CAPACITY-BASED INSTALLATION COST ESTIMATE
+========================================================= */
+
+function estimateResidentialSolarSubsidy(capacityKW) {
+
+    // Indicative PM Surya Ghar central subsidy for eligible
+    // residential systems in general-category states.
+    // Special-category states and scheme rules may differ.
+    const firstTwoKW = Math.min(capacityKW, 2) * 30000;
+    const thirdKW = Math.min(Math.max(capacityKW - 2, 0), 1) * 18000;
+
+    return Math.min(firstTwoKW + thirdKW, 78000);
+}
+
+
+function updateSolarCostEstimate() {
+
+    const consumptionInput = document.getElementById("solar-consumption");
+    const sunHoursInput = document.getElementById("sun-hours");
+    const efficiencyInput = document.getElementById("system-efficiency");
+    const coverageInput = document.getElementById("solar-coverage-percent");
+    const coverageValue = document.getElementById("solar-coverage-value");
+    const capacityInput = document.getElementById("solar-capacity");
+    const costInput = document.getElementById("system-cost");
+    const breakdown = document.getElementById("solar-cost-breakdown");
+    const capacityNote = document.getElementById("solar-capacity-note");
+
+    if (!capacityInput || !costInput || !coverageInput) return;
+
+    const consumption = solarNumber(consumptionInput?.value);
+    const sunHours = solarNumber(sunHoursInput?.value);
+    const efficiency = solarNumber(efficiencyInput?.value) / 100;
+    const coveragePercent = solarNumber(coverageInput.value);
+
+    if (coverageValue) coverageValue.textContent = `${coveragePercent}%`;
+
+    if (!Number.isFinite(consumption) || consumption <= 0 ||
+        !Number.isFinite(sunHours) || sunHours <= 0 ||
+        !Number.isFinite(efficiency) || efficiency <= 0 ||
+        !Number.isFinite(coveragePercent)) {
+        capacityInput.value = "";
+        costInput.value = "";
+        if (breakdown) breakdown.textContent = "Enter monthly consumption and select a state to estimate the system size and cost.";
+        if (capacityNote) capacityNote.textContent = "Capacity is calculated automatically once consumption and regional sun hours are available.";
+        return;
+    }
+
+    const targetMonthlyEnergy = consumption * coveragePercent / 100;
+    const monthlyGenerationPerKW = sunHours * efficiency * SOLAR_CONFIG.DAYS_PER_MONTH;
+    const requiredCapacity = targetMonthlyEnergy / monthlyGenerationPerKW;
+    const capacity = Math.min(SOLAR_CONFIG.MAX_CAPACITY, Math.max(SOLAR_CONFIG.MIN_CAPACITY, requiredCapacity));
+    const capacityLimited = requiredCapacity > SOLAR_CONFIG.MAX_CAPACITY;
+
+    // Keep a precise calculated capacity so the generation estimate matches the target closely.
+    capacityInput.value = capacity.toFixed(2);
+
+    const grossLow = capacity * SOLAR_CONFIG.ESTIMATED_COST_MIN_PER_KW;
+    const grossHigh = capacity * SOLAR_CONFIG.ESTIMATED_COST_MAX_PER_KW;
+    const subsidy = estimateResidentialSolarSubsidy(capacity);
+    const netLow = Math.max(0, grossLow - subsidy);
+    const netHigh = Math.max(0, grossHigh - subsidy);
+    const netMidpoint = (netLow + netHigh) / 2;
+    costInput.value = Math.round(netMidpoint / 100) * 100;
+
+    const cappedNote = capacityLimited
+        ? ` The required capacity exceeds the simulator limit of ${SOLAR_CONFIG.MAX_CAPACITY} kW, so the selected target may not be fully met.`
+        : "";
+
+    if (capacityNote) {
+        capacityNote.textContent = capacityLimited
+            ? `Required size: ${solarFormat(requiredCapacity, 2)} kW; shown size is capped at ${SOLAR_CONFIG.MAX_CAPACITY} kW.`
+            : `Estimated size for ${solarFormat(targetMonthlyEnergy, 1)} kWh/month of solar generation.`;
+    }
+
+    if (breakdown) {
+        breakdown.textContent =
+            `Target: ${solarFormat(coveragePercent, 0)}% of ${solarFormat(consumption, 1)} kWh/month (${solarFormat(targetMonthlyEnergy, 1)} kWh/month). ` +
+            `Before subsidy: ₹${solarFormat(grossLow, 0)}–₹${solarFormat(grossHigh, 0)}. ` +
+            `Indicative residential subsidy: up to ₹${solarFormat(subsidy, 0)}. ` +
+            `Estimated after subsidy: ₹${solarFormat(netLow, 0)}–₹${solarFormat(netHigh, 0)}. ` +
+            `Payback uses the range midpoint.${cappedNote}`;
     }
 }
 
@@ -178,6 +269,11 @@ function getSolarInputs() {
             "solar-capacity"
         );
 
+    const coverageInput =
+        document.getElementById(
+            "solar-coverage-percent"
+        );
+
     const costInput =
         document.getElementById(
             "system-cost"
@@ -219,6 +315,11 @@ function getSolarInputs() {
         capacity:
             solarNumber(
                 capacityInput?.value
+            ),
+
+        coveragePercent:
+            solarNumber(
+                coverageInput?.value
             ),
 
         systemCost:
@@ -358,6 +459,14 @@ function validateSolarInputs() {
     if (error) {
         valid = false;
     }
+
+
+    /* Desired consumption coverage */
+
+    const coverageInput = document.getElementById("solar-coverage-percent");
+    error = validateSolarInput(coverageInput, 5, 100);
+    showSolarError(coverageInput, error);
+    if (error) valid = false;
 
 
     /* System cost */
@@ -677,6 +786,11 @@ function updateSolarResults(
         `${solarFormat(generation.annualGeneration)} kWh`
     );
 
+    const consumptionInput = document.getElementById("solar-consumption");
+    const actualCoverage = solarNumber(consumptionInput?.value) > 0
+        ? Math.min(100, (generation.monthlyGeneration / solarNumber(consumptionInput.value)) * 100)
+        : 0;
+    solarSetText("solar-coverage-result", `${solarFormat(actualCoverage, 1)}%`);
 
     solarSetText(
         "annual-savings",
@@ -763,6 +877,8 @@ function saveSolarData(data) {
 ========================================================= */
 
 function calculateSolar() {
+
+    updateSolarCostEstimate();
 
     if (!validateSolarInputs()) {
 
@@ -853,8 +969,28 @@ function calculateSolar() {
         capacityKW:
             inputs.capacity,
 
+        coverageTargetPercent:
+            inputs.coveragePercent,
+
+        actualConsumptionCoveragePercent:
+            inputs.consumption > 0
+                ? Math.min(100, (generation.monthlyGeneration / inputs.consumption) * 100)
+                : 0,
+
+        targetMonthlySolarEnergy:
+            inputs.consumption * inputs.coveragePercent / 100,
+
         systemCost:
             inputs.systemCost,
+
+        grossSystemCostLow:
+            inputs.capacity * SOLAR_CONFIG.ESTIMATED_COST_MIN_PER_KW,
+
+        grossSystemCostHigh:
+            inputs.capacity * SOLAR_CONFIG.ESTIMATED_COST_MAX_PER_KW,
+
+        estimatedSubsidy:
+            estimateResidentialSolarSubsidy(inputs.capacity),
 
         electricityRate:
             inputs.electricityRate,
@@ -935,6 +1071,11 @@ function clearSolarResults() {
     );
 
     solarSetText(
+        "solar-coverage-result",
+        "0%"
+    );
+
+    solarSetText(
         "annual-savings",
         "₹0"
     );
@@ -1003,6 +1144,11 @@ function restoreSolarInputs() {
             "solar-capacity"
         );
 
+    const coverageInput =
+        document.getElementById(
+            "solar-coverage-percent"
+        );
+
     const costInput =
         document.getElementById(
             "system-cost"
@@ -1038,28 +1184,14 @@ function restoreSolarInputs() {
     }
 
 
-    if (
-        capacityInput &&
-        Number.isFinite(
-            Number(solar.capacityKW)
-        )
-    ) {
-
-        capacityInput.value =
-            solar.capacityKW;
+    if (coverageInput) {
+        coverageInput.value = Number.isFinite(Number(solar.coverageTargetPercent))
+            ? Math.min(100, Math.max(5, Number(solar.coverageTargetPercent)))
+            : 50;
     }
 
-
-    if (
-        costInput &&
-        Number.isFinite(
-            Number(solar.systemCost)
-        )
-    ) {
-
-        costInput.value =
-            solar.systemCost;
-    }
+    // Capacity and cost are derived from the current consumption target and regional solar data.
+    updateSolarCostEstimate();
 
 
     if (
@@ -1136,6 +1268,8 @@ function connectCalculatorConsumption() {
         consumptionInput.value =
             window.energyData.monthlyEnergy;
     }
+
+    updateSolarCostEstimate();
 }
 
 
@@ -1164,8 +1298,7 @@ function setupSolarEvents() {
 
         "solar-consumption",
         "system-efficiency",
-        "solar-capacity",
-        "system-cost",
+        "solar-coverage-percent",
         "solar-electricity-rate"
     ];
 
@@ -1183,16 +1316,24 @@ function setupSolarEvents() {
             "input",
             () => {
 
-                /*
-                    Validate while typing,
-                    but don't force calculation.
-                */
+                updateSolarCostEstimate();
 
+                // Validate while typing, but don't force calculation.
                 validateSolarInputs();
             }
         );
     });
 
+    // Populate the estimate on initial load and after restoring saved inputs.
+    updateSolarCostEstimate();
+
+    const stateInput = document.getElementById("solar-state");
+    if (stateInput) {
+        stateInput.addEventListener("change", () => {
+            updateSolarCostEstimate();
+            validateSolarInputs();
+        });
+    }
 
     /*
         Peak sun hours are controlled by
@@ -1209,6 +1350,8 @@ function setupSolarEvents() {
         sunHoursInput.addEventListener(
             "change",
             () => {
+
+                updateSolarCostEstimate();
 
                 /*
                     Recalculate only if the
